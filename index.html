@@ -14,9 +14,13 @@
   <em>You need your AWS Credentials as either env vars that started the server, or in your path</em>
   <hr>
   <div class="row">
-    <div class="input-field col s10">
+    <div class="input-field col s8">
       <input placeholder="lambda-function-name" id="fnName" type="text" class="validate">
       <label for="fnName">Function Name</label>
+    </div>
+    <div class="input-field col s2">
+      <input value='1' id="hours" type="number" class="validate">
+      <label for="fnName">Hours to Go Back</label>
     </div>
     <div class="input-field col s2">
       <button onclick="logger.findLogs();" class="waves-effect waves-light btn">List</button>
@@ -32,9 +36,8 @@
         console.log(startTime);
         $('#result').html('Loading........');
         $.get('/logs', {
-          params: $('#fnName').val(),
-          endTime: new Date().getTime(),
-          startTime: startTime.getTime()
+          name: $('#fnName').val(),
+          hours: $('#hours').val()
         }).success((data) => {
           data.sort(function(a, b) {
             return a.timestamp - b.timestamp;

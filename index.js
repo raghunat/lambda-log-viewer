@@ -22,7 +22,7 @@ app.get('/logs', (req, res) => {
   let token;
   let logs = [];
   let start = new Date();
-  start.setDate(start.getDate() - 1);
+  start.setHours(start.getHours() - parseInt(req.query.hours));
   let end = new Date();
 
   async.whilst(
@@ -31,7 +31,7 @@ app.get('/logs', (req, res) => {
     },
     function (callback) {
       cloudwatchlogs.describeLogStreams({
-        logGroupName: '/aws/lambda/' + req.query.params,
+        logGroupName: '/aws/lambda/' + req.query.name,
         orderBy: 'LastEventTime',
         nextToken: token,
         descending: true
@@ -63,7 +63,7 @@ app.get('/logs', (req, res) => {
         count++;
         console.log(`Started ${count} out of ${streams.length}`);
         cloudwatchlogs.getLogEvents({
-          logGroupName: '/aws/lambda/' + req.query.params,
+          logGroupName: '/aws/lambda/' + req.query.name,
           logStreamName: stream.logStreamName,
           endTime: end.getTime(),
           startTime: start.getTime()
