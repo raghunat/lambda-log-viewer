@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Lambda Log Viewer</title>
+  <link rel="stylesheet" href="bower_components/materialize/dist/css/materialize.min.css">
+  <script src="bower_components/jquery/dist/jquery.min.js"></script>
+  <script src="bower_components/materialize/dist/js/materialize.min.js"></script>
+</head>
+
+<body>
+  <h1>Raghunath's Log Viewer</h1>
+  <em>You need your AWS Credentials as either env vars that started the server, or in your path</em>
+  <hr>
+  <div class="row">
+    <div class="input-field col s10">
+      <input placeholder="lambda-function-name" id="fnName" type="text" class="validate">
+      <label for="fnName">Function Name</label>
+    </div>
+    <div class="input-field col s2">
+      <button onclick="logger.findLogs();" class="waves-effect waves-light btn">List</button>
+    </div>
+  </div>
+  <pre id="result"></pre>
+  <script>
+    'use strict';
+    class logger {
+      static findLogs() {
+        let startTime = new Date();
+        startTime.setDate(startTime.getDate() - 1);
+        console.log(startTime);
+        $('#result').html('Loading........');
+        $.get('/logs', {
+          params: $('#fnName').val(),
+          endTime: new Date().getTime(),
+          startTime: startTime.getTime()
+        }).success((data) => {
+          data.sort(function(a, b) {
+            return a.timestamp - b.timestamp;
+          });
+          data = data.map(e => {
+            return new Date(e.timestamp).toISOString() + '  |  ' + e.message
+          })
+          $('#result').html(JSON.stringify(data, null, 4));
+        }).error(e => {
+          console.error(e);
+          alert('Error, check console');
+        }).always(() => {
+          alert('done');
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

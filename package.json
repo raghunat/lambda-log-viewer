@@ -1,0 +1,17 @@
+{
+  "name": "lambda-logs",
+  "version": "1.0.0",
+  "description": "Ability to show lambda logs in a better way",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "Stephen Raghunath",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.5.2",
+    "aws-sdk": "^2.2.38",
+    "express": "^4.13.4"
+  }
+}

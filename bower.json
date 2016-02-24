@@ -1,0 +1,23 @@
+{
+  "name": "lambda-logs",
+  "description": "Ability to show lambda logs in a better way",
+  "main": "index.js",
+  "authors": [
+    "Stephen Raghunath"
+  ],
+  "license": "ISC",
+  "moduleType": [],
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.2.1",
+    "Materialize": "materialize#~0.97.5"
+  }
+}
