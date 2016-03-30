@@ -5,6 +5,8 @@ const express = require('express');
 const path = require('path');
 const AWS = require('aws-sdk');
 const async = require('async');
+const fs = require('fs');
+
 AWS.config.update({
   region: 'us-east-1'
 });
@@ -59,7 +61,7 @@ app.get('/logs', (req, res) => {
       console.log('Number of streams found', streams.length);
       console.log(start, start.getTime(), end, end.getTime());
       let count = 0;
-      async.eachLimit(streams, 5, function (stream, next) {
+      async.eachLimit(streams, 2, function (stream, next) {
         count++;
         console.log(`Started ${count} out of ${streams.length}`);
         cloudwatchlogs.getLogEvents({
@@ -73,8 +75,12 @@ app.get('/logs', (req, res) => {
           next();
         });
       }, function (err) {
-        if (err) return res.status(500).json(err); // an error occurred
-        else res.status(200).json(logs);
+        if (err) {
+          return res.status(500).json(err); // an error occurred
+        } else {
+          fs.writeFileSync('logs.json', JSON.stringify(logs, null, 1));
+          return res.status(200).json(logs);
+        }
       });
     }
   );
