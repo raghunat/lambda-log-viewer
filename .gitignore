@@ -34,3 +34,7 @@ node_modules
 
 # bower
 bower_components
+
+.idea
+logs.json
+output.txt

@@ -6,6 +6,7 @@ const path = require('path');
 const AWS = require('aws-sdk');
 const async = require('async');
 const fs = require('fs');
+const timeout = require('connect-timeout');
 
 AWS.config.update({
   region: 'us-east-1'
@@ -13,6 +14,8 @@ AWS.config.update({
 let cloudwatchlogs = new AWS.CloudWatchLogs();
 
 let app = express();
+
+app.use(timeout('300s'));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
@@ -23,9 +26,9 @@ app.get('/logs', (req, res) => {
   let paging = true;
   let token;
   let logs = [];
-  let start = new Date();
-  start.setHours(start.getHours() - parseInt(req.query.hours));
-  let end = new Date();
+  let start = new Date(req.query.start);
+  let end = new Date(req.query.end);
+  console.log('Time parameters', start, end);
 
   async.whilst(
     function () {
@@ -34,23 +37,28 @@ app.get('/logs', (req, res) => {
     function (callback) {
       cloudwatchlogs.describeLogStreams({
         logGroupName: '/aws/lambda/' + req.query.name,
-        orderBy: 'LastEventTime',
-        nextToken: token,
-        descending: true
+        orderBy     : 'LastEventTime',
+        nextToken   : token,
+        descending  : true,
+        limit       : 50
       }, function (err, data) {
-        if (err) return callback(err);
+        if (err) return console.error(err) && callback(err);
 
-        if (data.logStreams[0].firstEventTimestamp < start.getTime()) {
-          paging = false;
+        console.log('Log Stream time', new Date(data.logStreams[0].firstEventTimestamp), data.logStreams[0].firstEventTimestamp, start.getTime());
+
+        if (data.logStreams[0].firstEventTimestamp >= start.getTime() && data.logStreams[0].firstEventTimestamp <= end.getTime()) {
+          streams = streams.concat(data.logStreams);
         }
-
-        streams = streams.concat(data.logStreams);
 
         if (data.nextToken) {
           token = data.nextToken;
         } else {
           paging = false;
         }
+        if (data.logStreams[0].firstEventTimestamp < start.getTime()) {
+          paging = false;
+        }
+
         setTimeout(function () {
           callback();
         }, 100);
@@ -65,10 +73,10 @@ app.get('/logs', (req, res) => {
         count++;
         console.log(`Started ${count} out of ${streams.length}`);
         cloudwatchlogs.getLogEvents({
-          logGroupName: '/aws/lambda/' + req.query.name,
+          logGroupName : '/aws/lambda/' + req.query.name,
           logStreamName: stream.logStreamName,
-          endTime: end.getTime(),
-          startTime: start.getTime()
+          endTime      : end.getTime(),
+          startTime    : start.getTime()
         }, function (err, data) {
           if (err) return next(err); // an error occurred
           logs = logs.concat(data.events);
@@ -87,8 +95,9 @@ app.get('/logs', (req, res) => {
 });
 
 
-
 app.use('/bower_components', express.static('bower_components'));
-app.listen(process.env.LAMBDA_LOGS_PORT || 3333, () => {
+var server = app.listen(process.env.LAMBDA_LOGS_PORT || 3333, () => {
   console.log(`Listening at localhost:${process.env.LAMBDA_LOGS_PORT || 3333}`);
 });
+
+server.timeout = 300000;

@@ -5,8 +5,10 @@
   <meta charset="UTF-8">
   <title>Lambda Log Viewer</title>
   <link rel="stylesheet" href="bower_components/materialize/dist/css/materialize.min.css">
+  <link rel="stylesheet" href="bower_components/materialize-clockpicker/dist/css/materialize.clockpicker.css">
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
   <script src="bower_components/materialize/dist/js/materialize.min.js"></script>
+  <script src="bower_components/materialize-clockpicker/dist/js/materialize.clockpicker.js"></script>
 </head>
 
 <body>
@@ -14,13 +16,25 @@
   <em>You need your AWS Credentials as either env vars that started the server, or in your path</em>
   <hr>
   <div class="row">
-    <div class="input-field col s8">
+    <div class="input-field col s6">
       <input placeholder="lambda-function-name" id="fnName" type="text" class="validate">
       <label for="fnName">Function Name</label>
     </div>
-    <div class="input-field col s2">
-      <input value='1' id="hours" type="number" class="validate">
-      <label for="fnName">Hours to Go Back</label>
+    <div class="input-field col s1">
+      <label for="fromDate">From Date</label>
+      <input id="fromDate" class="datepicker" type="date">
+    </div>
+    <div class="input-field col s1">
+      <label for="fromTime">From Time</label>
+      <input id="fromTime" class="timepicker" type="time">
+    </div>
+    <div class="input-field col s1">
+      <label for="toDate">To Date</label>
+      <input id="toDate" class="datepicker" type="date">
+    </div>
+    <div class="input-field col s1">
+      <label for="toTime">To</label>
+      <input id="toTime" class="timepicker" type="time">
     </div>
     <div class="input-field col s2">
       <button onclick="logger.findLogs();" class="waves-effect waves-light btn">List</button>
@@ -28,6 +42,11 @@
   </div>
   <pre id="result" style="width:100%;overflow:auto; max-height:500px;"></pre>
   <script>
+    $('#fromTime, #toTime').pickatime({
+      autoclose: false,
+      twelvehour: false
+    });
+    $('#fromDate, #toDate').pickadate({});
     'use strict';
     class logger {
       static findLogs() {
@@ -35,22 +54,28 @@
         startTime.setDate(startTime.getDate() - 1);
         console.log(startTime);
         $('#result').html('Loading........');
-        $.get('/logs', {
-          name: $('#fnName').val(),
-          hours: $('#hours').val()
-        }).success((data) => {
-          data.sort(function(a, b) {
-            return a.timestamp - b.timestamp;
-          });
-          data = data.map(e => {
-            return new Date(e.timestamp).toISOString() + '  |  ' + e.message
-          })
-          $('#result').html(JSON.stringify(data, null, 4));
-        }).error(e => {
-          console.error(e);
-          alert('Error, check console');
-        }).always(() => {
-          alert('done');
+        $.ajax({
+          url: '/logs',
+          data:  {
+            name: $('#fnName').val(),
+            start: $('#fromDate').val() + ' ' + $('#fromTime').val(),
+            end: $('#toDate').val() + ' ' + $('#toTime').val()
+          },
+          success: (data) => {
+            data.sort(function(a, b) {
+              return b.timestamp - a.timestamp;
+            });
+            data = data.map(e => {
+              return new Date(e.timestamp).toISOString() + '  |  ' + e.message
+            });
+            $('#result').html(JSON.stringify(data, null, 4));
+            alert('done');
+          },
+          error: err => {
+            alert('Error! Check the console');
+            console.error(err);
+          },
+          timeout: 300000 //in milliseconds
         });
       }
     }
